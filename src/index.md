@@ -1,11 +1,13 @@
+---
+sql:
+  data: joined.csv
+---
 
 
-```js
-const db = DuckDBClient.of({data: await FileAttachment("./joined.csv")});
+```sql id=[...data]
+SELECT * FROM data
 ```
-```js
-const data = db.query("SELECT * FROM data")
-```
+
 ```js
 Inputs.table(data)
 ```
