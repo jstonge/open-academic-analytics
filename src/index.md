@@ -134,7 +134,7 @@ Alexis Brieant's lab have super cool project, e.g. The Adolescent Brain Cognitiv
 <div class="tip"> 
 Speaking of which, maybe we could reach to Debra Titone eventually, she was open for some collaboration when we talked to her at Netsci: <a href="https://www.mcgill.ca/language-lab/">lab website</a>
 <br><br>
-<img src="titone_lab.png"></img>
+<img src="titone_lab.webp"></img>
 </div>
 
 <!-- APPENDIX -->

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define input files (already in the local directory)
-CSV1="src/Finding Principal Investigators (PIs) - uvm_profs_2023.csv"
-CSV2="src/Finding Principal Investigators (PIs) - uvm_dept2col.csv"
+CSV1="Finding Principal Investigators (PIs) - uvm_profs_2023.csv"
+CSV2="Finding Principal Investigators (PIs) - uvm_dept2col.csv"
 
 # Use the data loader cache directory to store the processed data
 TMPDIR="docs/.observablehq/cache/"
