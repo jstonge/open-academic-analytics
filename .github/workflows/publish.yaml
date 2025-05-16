@@ -25,6 +25,9 @@ jobs:
       - name: Install DuckDB CLI
         run: curl https://install.duckdb.org | sh
 
+      - name: Check DuckDB version
+        run: duckdb --version
+
       - name: Build
         run: npm run build
 
