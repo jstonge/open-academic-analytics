@@ -12,11 +12,11 @@ mkdir -p "$TMPDIR"
 
 # Copy the files to the cache directory if not already there
 if [ ! -f "$TMPDIR/uvm_profs_2023.csv" ]; then
-  cp "./$CSV1" "$TMPDIR/uvm_profs_2023.csv"
+  cp "$CSV1" "$TMPDIR/uvm_profs_2023.csv"
 fi
 
 if [ ! -f "$TMPDIR/uvm_dept2col.csv" ]; then
-  cp "./$CSV2" "$TMPDIR/uvm_dept2col.csv"
+  cp "$CSV2" "$TMPDIR/uvm_dept2col.csv"
 fi
 
 # Generate a CSV file using DuckDB

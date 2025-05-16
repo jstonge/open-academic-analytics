@@ -1,7 +1,4 @@
----
-sql:
-    data: ./joined.csv
----
+
 
 # Open Academic Analytics
 
@@ -83,8 +80,10 @@ We find groups in the following departments
 
 First, you can query the table of faculties with groups. If some particular website is of interest, you can put it in the preview cards below to see what they look like (or visite them directly). I'm highlighting a few labs i find interesting below.
 
-```sql id=[...groups]
+```js
+const groups = db.query(`
 SELECT payroll_name, perceived_as_male, group_url, dept, college FROM data WHERE group_url IS NOT null
+`)
 ```
 
 <div class="card" style="padding: 0;">
@@ -139,11 +138,21 @@ Speaking of which, maybe we could reach to Debra Titone eventually, she was open
 
 <!-- APPENDIX -->
 
-```sql id=[...rawData]
-SELECT * FROM data
+```js
+const db = DuckDBClient.of({data: FileAttachment("joined.csv")});
 ```
 
-```sql id=[...countData]
+
+```js
+const data = db.query(`SELECT * FROM data`)
+```
+
+```js
+const rawData = [...data]
+```
+
+```js 
+const countData = db.query(`
 WITH dept_totals AS (
     SELECT UNNEST(STR_SPLIT(host_dept, '; ')) AS host_dept, COUNT(*) AS total_n
     FROM data
@@ -163,6 +172,7 @@ JOIN dept_totals t ON d.host_dept = t.host_dept
 WHERE d.has_research_group IS NOT NULL AND d.has_research_group != 999
 GROUP BY d.has_research_group, d.host_dept, d.perceived_as_male, d.college
 ORDER BY d.host_dept, d.has_research_group, d.college
+`)
 ```
 
 ```js
@@ -231,5 +241,5 @@ function waffles(c, {width} = {}) {
 
 
 ```js
-const colleges = Array.from(new Set(rawData.map(d=>d.college)))
+const colleges = Array.from(new Set([...rawData.map(d=>d.college)]))
 ```
