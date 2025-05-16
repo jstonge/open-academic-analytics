@@ -80,9 +80,9 @@ We find groups in the following departments
 
 First, you can query the table of faculties with groups. If some particular website is of interest, you can put it in the preview cards below to see what they look like (or visite them directly). I'm highlighting a few labs i find interesting below.
 
-<!-- ```js
-const groups = db.query(`
-SELECT payroll_name, perceived_as_male, group_url, dept, college FROM data WHERE group_url IS NOT null
+```js
+const groups = db2.query(`
+SELECT payroll_name, perceived_as_male, group_url, dept, college FROM rawData WHERE group_url IS NOT null
 `)
 ```
 
@@ -93,11 +93,11 @@ SELECT payroll_name, perceived_as_male, group_url, dept, college FROM data WHERE
 
 ```js
 const search2 = view(Inputs.search(groups, {placeholder: "Search data…"}));
-``` -->
+```
 
 Let's visualize a few of those URLs. You can click on the card to visit the website. The Rubenstein has quite a few interesting labs
 
-<!-- <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; width: 100%;">
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; width: 100%;">
     <div>
         ${card("https://ecoculturelab.net/")}
     </div>
@@ -126,22 +126,22 @@ Unclear if there are still students involved in the eco culture lab, but the guy
     <div>
       ${card("https://www.todd-lab.org/personnel")}
     </div>
-</div> -->
+</div>
 
 Alexis Brieant's lab have super cool project, e.g. The Adolescent Brain Cognitive Development (ABCD) Study is a longitudinal studies with nearly 12,000 families across the United States. They are open sourcing as much as they can. 
 
 <div class="tip"> 
 Speaking of which, maybe we could reach to Debra Titone eventually, she was open for some collaboration when we talked to her at Netsci: <a href="https://www.mcgill.ca/language-lab/">lab website</a>
 <br><br>
-<img src="titone_lab.webp"></img>
+<img src="./assets/titone_lab.webp"></img>
 </div>
 
 <!-- APPENDIX -->
 
 ```js
 const db = DuckDBClient.of({
-  data: FileAttachment("Finding Principal Investigators (PIs) - uvm_profs_2023.parquet"),
-  dept2col: FileAttachment("Finding Principal Investigators (PIs) - uvm_dept2col.parquet")
+  data: FileAttachment("./data/Finding Principal Investigators (PIs) - uvm_profs_2023.parquet"),
+  dept2col: FileAttachment("./data/Finding Principal Investigators (PIs) - uvm_dept2col.parquet")
   });
 ```
 
