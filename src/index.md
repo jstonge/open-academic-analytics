@@ -167,46 +167,30 @@ const data = db.query(`
 const rawData = [...data]
 ```
 
-```js 
-const countData = db.query(`
-WITH expanded AS (
-  SELECT *, UNNEST(STR_SPLIT(host_dept, '; ')) AS dept
-  FROM data
-  WHERE has_research_group IS NOT NULL AND has_research_group != 999
-),
-joined AS (
-  SELECT e.*, d.college
-  FROM expanded e
-  LEFT JOIN dept2col d
-  ON TRIM(e.dept) = d.department
-),
-dept_totals AS (
-  SELECT dept AS host_dept, college, COUNT(*) AS total_n
-  FROM joined
-  GROUP BY dept, college
-  ORDER BY total_n DESC
-)
-SELECT 
-  COUNT(*) AS n,
-  j.has_research_group,
-  j.host_dept,
-  j.perceived_as_male,
-  j.college
-FROM joined j
-JOIN dept_totals t 
-  ON j.dept = t.host_dept AND j.college = t.college
-GROUP BY 
-  j.has_research_group,
-  j.host_dept,
-  j.perceived_as_male,
-  j.college
-ORDER BY 
-  j.host_dept,
-  j.has_research_group,
-  j.college;
+```js
+const db2 = DuckDBClient.of({
+  rawData: rawData,
+  });
+```
 
+```js
+const countData = db2.query(`
+WITH dept_totals AS (
+    SELECT UNNEST(STR_SPLIT(host_dept, '; ')) AS host_dept, COUNT(*) AS total_n
+    FROM rawData
+    WHERE has_research_group IS NOT NULL AND has_research_group != 999
+    GROUP BY host_dept, college
+    ORDER BY total_n DESC
+)
+SELECT COUNT(*) AS n, d.has_research_group, d.host_dept, d.perceived_as_male, d.college
+FROM rawData d
+JOIN dept_totals t ON d.host_dept = t.host_dept 
+WHERE d.has_research_group IS NOT NULL AND d.has_research_group != 999
+GROUP BY d.has_research_group, d.host_dept, d.perceived_as_male, d.college
+ORDER BY d.host_dept, d.has_research_group, d.college
 `)
 ```
+
 
 ```js
 function card(url) {
