@@ -1,6 +1,6 @@
 ---
 sql:
-    data: joined.csv
+    data: ./joined.csv
 ---
 
 # Open Academic Analytics
