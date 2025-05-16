@@ -148,19 +148,8 @@ const db = DuckDBClient.of({
 
 ```js
 const data = db.query(`
-WITH expanded AS (
-    SELECT *, UNNEST(STR_SPLIT(host_dept, '; ')) AS dept
-    FROM data
-    WHERE has_research_group != '999'
-),
-joined AS (
-    SELECT e.*, d.college
-    FROM expanded e
-    LEFT JOIN dept2col d
-    ON TRIM(e.dept) = d.department
-)
 SELECT *
-FROM joined
+FROM data
 `)
 ```
 
