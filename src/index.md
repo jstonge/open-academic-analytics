@@ -52,7 +52,7 @@ If we break by `perceived_sex`, we can that we almost have parity in faculty num
 
 Next, we look at the same plot by department. Here, we stack gender to ease readability, and facet by department and by whether faculties in that department have a research group.
 
-<!-- <div>
+<div>
   <div>${resize((width) => waffles(colleges[0], {width}))}</div>
   <div class="warning">
     There might be still some mistakes in the data. For example, sometimes maybe a program was misinterpreted as department. If so, feel free to correct the mistake on the <a href="https://docs.google.com/spreadsheets/d/1LYoj01Wnfhd8SPNZXg1bg1jjxE9TSZ-pCKhoqhD0uWo/edit?gid=328051137#gid=328051137">excel sheet</a>.
@@ -65,7 +65,7 @@ Next, we look at the same plot by department. Here, we stack gender to ease read
   <div>${resize((width) => waffles(colleges[3], {width}))}</div>
   <div>${resize((width) => waffles(colleges[4], {width}))}</div>
   <div>${resize((width) => waffles(colleges.slice(5,8), {width}))}</div>
-</div> -->
+</div>
 
 If we assume that digital humanities tend to lead to research groups (unproven assumption), digital humanities do not seem to be happening at UVM. That is, economics, english, history, sociology, political science, sociology, philosophy do not have much research groups (with some exceptions that we could reach out). Business people don't do groups either. I guess this is not as big as a surprise.
 
@@ -84,9 +84,9 @@ First, you can query the table of faculties with groups. If some particular webs
 const groups = db.query(`
 SELECT payroll_name, perceived_as_male, group_url, dept, college FROM data WHERE group_url IS NOT null
 `)
-``` -->
+```
 
-<!-- <div class="card" style="padding: 0;">
+<div class="card" style="padding: 0;">
     ${Inputs.table(search2)}
 </div>
 
@@ -107,11 +107,11 @@ Let's visualize a few of those URLs. You can click on the card to visit the webs
     <div>
         ${card("https://all-geo.org/jefferson/people/")}
     </div>
-</div> -->
+</div>
 
 Unclear if there are still students involved in the eco culture lab, but the guy who started it seems to be a hot shot. The The Watershed Lab (rightmost) is super active, might be worth reaching to them. There are quite a few labs in the psychological sciences as well. Most are behavioral experiments, but maybe they have cool data we don't know about. Since i have a BA in psychology, I can say that most often in the field they don't tend to have super strong computational skills but they might be shifting towards more observational data to supplement their experimental data.
 
-<!-- <div style="
+<div style="
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 16px;
@@ -140,42 +140,73 @@ Speaking of which, maybe we could reach to Debra Titone eventually, she was open
 
 ```js
 const db = DuckDBClient.of({
-  data: FileAttachment("Finding Principal Investigators (PIs) - uvm_profs_2023.parquet")
+  data: FileAttachment("Finding Principal Investigators (PIs) - uvm_profs_2023.parquet"),
+  dept2col: FileAttachment("Finding Principal Investigators (PIs) - uvm_dept2col.parquet")
   });
 ```
 
-
 ```js
-const data = db.query(`SELECT * FROM data`)
+const data = db.query(`
+  WITH expanded AS (
+    SELECT *, UNNEST(STR_SPLIT(host_dept, '; ')) AS dept
+    FROM data
+    WHERE has_research_group != '999'
+  ),
+  joined AS (
+    SELECT e.*, d.college
+    FROM expanded e
+    LEFT JOIN dept2col d
+    ON TRIM(e.dept) = d.department
+  )
+  SELECT *
+  FROM joined;
+`)
 ```
 
 ```js
 const rawData = [...data]
 ```
 
-<!-- ```js 
+```js 
 const countData = db.query(`
-WITH dept_totals AS (
-    SELECT UNNEST(STR_SPLIT(host_dept, '; ')) AS host_dept, COUNT(*) AS total_n
-    FROM data
-    WHERE has_research_group IS NOT NULL AND has_research_group != 999
-    GROUP BY host_dept, college
-    ORDER BY total_n DESC
+WITH expanded AS (
+  SELECT *, UNNEST(STR_SPLIT(host_dept, '; ')) AS dept
+  FROM data
+  WHERE has_research_group IS NOT NULL AND has_research_group != 999
 ),
 joined AS (
   SELECT e.*, d.college
   FROM expanded e
   LEFT JOIN dept2col d
   ON TRIM(e.dept) = d.department
+),
+dept_totals AS (
+  SELECT dept AS host_dept, college, COUNT(*) AS total_n
+  FROM joined
+  GROUP BY dept, college
+  ORDER BY total_n DESC
 )
-SELECT COUNT(*) AS n, d.has_research_group, d.host_dept, d.perceived_as_male, d.college
-FROM data d
-JOIN dept_totals t ON d.host_dept = t.host_dept 
-WHERE d.has_research_group IS NOT NULL AND d.has_research_group != 999
-GROUP BY d.has_research_group, d.host_dept, d.perceived_as_male, d.college
-ORDER BY d.host_dept, d.has_research_group, d.college
+SELECT 
+  COUNT(*) AS n,
+  j.has_research_group,
+  j.host_dept,
+  j.perceived_as_male,
+  j.college
+FROM joined j
+JOIN dept_totals t 
+  ON j.dept = t.host_dept AND j.college = t.college
+GROUP BY 
+  j.has_research_group,
+  j.host_dept,
+  j.perceived_as_male,
+  j.college
+ORDER BY 
+  j.host_dept,
+  j.has_research_group,
+  j.college;
+
 `)
-``` -->
+```
 
 ```js
 function card(url) {
