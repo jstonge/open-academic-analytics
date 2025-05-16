@@ -139,7 +139,7 @@ Speaking of which, maybe we could reach to Debra Titone eventually, she was open
 <!-- APPENDIX -->
 
 ```js
-const db = DuckDBClient.of({data: FileAttachment("joined.csv")});
+const db = DuckDBClient.of({data: FileAttachment("src/joined.csv")});
 ```
 
 
