@@ -1,3 +1,10 @@
 duckdb
 numpy
 pandas
+pyalex
+tqdm
+cmdstanpy
+arviz
+seaborn
+matplotlib
+fastparquet
