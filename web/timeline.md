@@ -1,4 +1,5 @@
 ---
+theme: [air, coffee]
 sql:
   coauthor: data/coauthor.parquet
   paper: data/paper.parquet

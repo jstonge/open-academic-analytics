@@ -1,4 +1,6 @@
-
+---
+theme: [air, coffee]
+---
 
 # Open Academic Analytics
 
