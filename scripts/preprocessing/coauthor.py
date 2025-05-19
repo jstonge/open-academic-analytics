@@ -1,19 +1,25 @@
-import duckdb
-import pandas as pd
-import numpy as np
+import sys
+import os
 import argparse
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from datetime import datetime
 import calendar
 import random
 
+ROOT_DIR = os.path.abspath(os.curdir)
+sys.path.append(ROOT_DIR)
+
+from scripts.modules.database_exporter import DatabaseExporter
+
 def parse_args():
-    parser = argparse.ArgumentParser("Data Downloader")
+    parser = argparse.ArgumentParser("Coauthor Data Processor")
     parser.add_argument(
         "-i",
         "--input",
-        type= Path,
-        help="JSONlines file with urls and hashes",
+        type=Path,
+        help="Input directory with database",
         required=True,
     )
     parser.add_argument(
@@ -21,34 +27,18 @@ def parse_args():
     )
     return parser.parse_args()
 
-def shuffle_date_within_month(date_str):
-    # Parse the date string to a datetime object
-    date = datetime.strptime(date_str, "%Y-%m-%d")
-
-    # Get the number of days in the month of the given date
-    _, num_days_in_month = calendar.monthrange(date.year, date.month)
-
-    # Generate a random day within the same month
-    random_day = random.randint(1, num_days_in_month)
-
-    # Create a new date with the randomly chosen day
-    shuffled_date = date.replace(day=random_day)
-
-    # Return the date in the desired format
-    return shuffled_date.strftime("%Y-%m-%d")
-
 def main():
-    
     args = parse_args()
     
-    # INPUT_DIR = Path("../../data/raw")
-    INPUT_DIR = args.input
-    
-    con = duckdb.connect(str(INPUT_DIR / "oa_data_raw.db"))
+    # Initialize database exporter
+    print(f"Connecting to database at {args.input / 'oa_data_raw.db'}")
+    # db_exporter = DatabaseExporter("/Users/jstonge1/Documents/work/uvm/open-academic-analytics/data/raw/oa_data_raw.db")
+    db_exporter = DatabaseExporter(str(args.input / "oa_data_raw.db"))
     
     # We want a table with ego (selected author under analysis), its coauthors, and 
     # metadata about their relationship (do they share institutions? How many times they
     # have collaborated, age difference, etc.)
+    print("Querying coauthor data from database")
     query = """
         SELECT 
             c.pub_year, c.pub_date::CHAR as pub_date,
@@ -68,23 +58,33 @@ def main():
         ORDER BY c.pub_year
     """
 
-    df = con.sql(query).fetchdf()
+    df = db_exporter.con.sql(query).fetchdf()
+    print(f"Retrieved {len(df)} coauthor relationships")
 
-    # making sure
+    # Check for required columns
+    print("Checking data structure")
+    required_cols = ['aid', 'name', 'author_age', 'coauth_age', 'age_diff', 'pub_date']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        print(f"Warning: Missing required columns: {missing_cols}")
+        print(f"Available columns: {df.columns.tolist()}")
+    
+    # Filter rows with valid author_age
+    print("Filtering and processing data")
     df = df[~df.author_age.isna()]
     df['author_age'] = df.author_age.astype(int)
+    print(f"After filtering: {len(df)} relationships")
     
-    # BIG MOVE. 
-    # After inspection, many coauthor min years are most likely wrong.
-    # OpenAlex very often think that first works of a given author is much earlier than it really is.
-    # For now, we simply say that all coauthors before 1950 are wrong. We will try to fix that later.
+    # Handle incorrect coauthor min years
+    # OpenAlex often thinks first works of a given author is much earlier than it really is
+    print("Correcting coauthor publication years")
     df['coauth_min_year'] = np.where(df.coauth_min_year < 1950, None, df.coauth_min_year)
     df['coauth_age'] = df.pub_year - df.coauth_min_year
     df['age_diff'] = df.coauth_age - df.author_age
-
-    # df[df['coauthor_age'].isna()] # 6K rows we need to fix
+    print(f"Corrected {df.coauth_min_year.isna().sum()} missing coauthor min years")
     
-    # bucketize age
+    # Bucketize age difference
+    print("Creating age buckets")
     agg_diff_vec = df.age_diff.to_numpy()
     categories = np.empty(agg_diff_vec.shape, dtype=object)
 
@@ -95,15 +95,35 @@ def main():
     categories[agg_diff_vec >= 15] = "much_older"
 
     df['age_bucket'] = categories
-
+    
+    # Verify age buckets match missing values
     assert len(df[df['age_bucket'].isna()]) == len(df[df['coauth_age'].isna()])
-
-    df["age_std"] = "1"+df.author_age.astype(str).map(lambda x: x.zfill(3))+"-"+df.pub_date.map(lambda x: "-".join(x.split("-")[-2:]))
-    df["age_std"] = df.age_std.map(lambda x: x.replace("29", "28") if x.endswith("29") else x)  
     
-    df.to_parquet (args.output / "coauthor.parquet")
+    # Create standardized age representation
+    print("Creating standardized age representation")
+    try:
+        df["age_std"] = "1" + df.author_age.astype(str).map(lambda x: x.zfill(3)) + "-" + df.pub_date.map(lambda x: "-".join(x.split("-")[-2:]))
+        df["age_std"] = df.age_std.map(lambda x: x.replace("29", "28") if x.endswith("29") else x)
+    except Exception as e:
+        print(f"Error creating age_std: {e}")
+        # Fallback approach
+        df["age_std"] = df.apply(
+            lambda row: f"1{str(int(row.author_age)).zfill(3)}-{row.pub_date.split('-')[1]}-{row.pub_date.split('-')[2]}" 
+            if not pd.isna(row.author_age) and isinstance(row.pub_date, str) else None, 
+            axis=1
+        )
+        df["age_std"] = df.age_std.map(lambda x: x.replace("29", "28") if x and x.endswith("29") else x)
+        print("Created age_std column with fallback approach")
     
-    con.close()
+    # Save to parquet
+    #  output_path = "/Users/jstonge1/Documents/work/uvm/open-academic-analytics/web/data/coauthor.parquet"
+    output_path = args.output / "coauthor.parquet"
+    print(f"Saving {len(df)} processed coauthor relationships to {output_path}")
+    df.to_parquet(output_path)
+    print("Done!")
+    
+    # Close database connection
+    db_exporter.close()
 
 if __name__ == '__main__':
     main()

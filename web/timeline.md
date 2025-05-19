@@ -4,16 +4,29 @@ sql:
   coauthor: data/coauthor.parquet
   paper: data/paper.parquet
   author: data/author.parquet
-  training: data/training_data.parquet
 ---
 
 # Scientific collab timeline dashboard
 ## How do collabs and individual productivity coevolve over time?
 
+
 <div class="grid grid-cols-4">
   <div class="card">
     <h2>Unique authors</h2>                                                                         
     <span class="big">${[...uniqCoAuthors].length}</span>
+  </div>
+  <div>
+      ${form.a_nc === 'age_diff' ? 
+      Plot.legend({
+        color: {
+          range: ["#FDE725FF", "#20A387FF", "#404788FF"], 
+          domain: ["younger", "samge age", "older"]
+        }
+      }) : Plot.legend({ color })
+    }
+  </div>
+  <div class="grid-colspan-2">
+    ${formInput}
   </div>
 </div>
 
@@ -34,49 +47,6 @@ const formInput = Inputs.form({
 const form = Generators.input(formInput)
 ```
 
-<div class="warning">There might be some errors in the data, e.g. authors wrongly gets attributed a paper or I mislabeled group status of an author. If this is the case, feel free to update the following  <a href="https://docs.google.com/spreadsheets/d/1LYoj01Wnfhd8SPNZXg1bg1jjxE9TSZ-pCKhoqhD0uWo/edit#gid=0">excel sheet</a></div>
-<div class="grid grid-cols-2">
-  <div>In the lineplot on the right, we show the changing rates for a selected author. Right now, we force the model to find a switchpoint in between an early and late rate. We still need to do model selection to determine if the switchpoint is necessary or not.<br><br> ${formInput}</div>
-  <div >${resize((width) => 
-  Plot.plot({
-    title: "switch point for selected authors",
-    width,
-    height: 320,
-    y: {grid: true, label: "Collabo younger author"}, 
-    color: {
-      legend: true, 
-      range: ["red", "black", "lightgrey"], 
-      domain: ["younger", "same_age", "older"]
-    },
-    marks: [
-      Plot.frame(),
-      Plot.lineY(trainingEgo, { x: form.xaxis_ts, y: "changing_rate", 
-                strokeWidth: 1, strokeDasharray: 3, stroke: "red",
-              },     
-      ),
-      Plot.dotY(
-        trainingEgo, { x: form.xaxis_ts, y: "younger", stroke: "red"},     
-      ),
-      Plot.dotY(
-        trainingEgo, { x: form.xaxis_ts, y: "same_age", stroke: "black"},     
-      ),
-      Plot.dotY(
-        trainingEgo, { x: form.xaxis_ts, y: "older", stroke: "lightgrey"},     
-      ),
-      Plot.dotY(trainingEgo, Plot.selectLast({
-        x: form.xaxis_ts, y: "changing_rate", fill: d => d["has_research_group"] === "1.0" ? "green" : "lightgrey",  
-        r: 10, symbol: "star", fillOpacity: 0.7, stroke: "black"
-      })),
-      Plot.text(trainingEgo, Plot.selectLast(
-        {x: form.xaxis_ts, y: "changing_rate", text: d => d["has_research_group"] == "1.0" ? "Has\nresearch\ngroup" : "No\ngroup", dx: 40
-        }))
-    ]
-  })
-  )}
-  </div>
-</div>
-
-
 <div class="grid grid-cols-2">
 <div>${resize((width) => 
 Plot.plot({
@@ -85,8 +55,9 @@ Plot.plot({
         height: 800,
         marginLeft: 35,
         color: {
-          legend: true
-        }, 
+          legend: false,
+          type: "categorical",
+        },
         fx: { label: null, padding: 0.03, axis: "top" },
         y: { 
           grid: true, 
@@ -98,7 +69,10 @@ Plot.plot({
           Plot.dot(coauthor, Plot.dodgeX("middle", {
             fx: "name",
             y: d => d[form.yaxis], 
-            fill: d => form.a_nc === 'age_diff' ? age_bucket(d) : d[form.a_nc],
+            fill: d => {
+              const v = form.a_nc === 'age_diff' ? age_bucket(d) : d[form.a_nc];
+              return v == null ? "gray" : v;
+            },
             r: d => d[form.a_r], 
             stroke: 'black', 
             strokeWidth: d => d[form.a_nc] === null ? 0.1 : .3, 
@@ -108,14 +82,6 @@ Plot.plot({
           }))
         ]
         }))
-}
-${form.a_nc === 'age_diff' ? 
-  Plot.legend({
-    color: {
-      range: ["#FDE725FF", "#20A387FF", "#404788FF"], 
-      domain: ["younger", "samge age", "older"]
-    }
-  }) : ""
 }
 </div>
 <div>${resize((width) => 
@@ -148,29 +114,9 @@ ${form.a_nc === 'age_diff' ?
 </div>
 </div>
 
----
-
-Features to examines:
-<div class="grid grid-cols-4">
-  <div class="card"><br><br><br><br><br><br>
-    <figure>
-      <img src="https://raw.githubusercontent.com/jstonge/hello-research-groups/main/static/friendship.svg" alt="growth" style="width:100%">
-    </figure> 
-    <br><br><br><br><br><br><br>The power of Two
-  </div>
-  <div>
-    <figure>
-      <img src="https://raw.githubusercontent.com/jstonge/hello-research-groups/main/static/width.svg" 
-      alt="width" style="width:100%">
-    </figure> 
-    Average width + Max width
-  </div>
-</div>
-
----
 
 ```js
-const selected_authors = form.targets.length > 0 ? form.targets[0] : 'Aaron Clauset'
+const selected_authors = form.targets.length > 0 ? form.targets[0] : 'Molly Stanley'
 ```
 
 ```js
@@ -203,20 +149,6 @@ ORDER BY a.pub_year
 
 ```js
 Inputs.table(paper)
-```
-
-## training table
-
-```sql id=trainingEgo
-  SELECT DISTINCT name, changing_rate, college, author_age, younger, 
-      same_age, older, has_research_group::CHAR as has_research_group, pub_year
-  FROM training 
-  WHERE name = ${selected_authors}
-  ORDER BY author_age
-```
-
-```sql
-SELECT * FROM training WHERE name = ${selected_authors} ORDER BY author_age
 ```
 
 
@@ -254,4 +186,21 @@ function age_bucket(d) {
                 return "#FDE725FF"
             };
   }
+```
+
+<!-- LEGEND COAUTHOR -->
+
+```js
+const domain = [...new Set([...coauthor]
+  .map(d => form.a_nc === 'age_diff' ? age_bucket(d) : d[form.a_nc])
+  .filter(v => v != null)
+)];
+```
+
+```js
+const range = d3.schemeTableau10.slice(0, domain.length);
+```
+
+```js
+const color = { type: "categorical", domain, range };
 ```
