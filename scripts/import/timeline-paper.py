@@ -138,6 +138,11 @@ def main():
         
         # Process papers for each year
         papers = []
+
+        # Check if we have valid year range
+        if min_yr is None or max_yr is None:
+            print(f"Skipping {target_name} ({target_aid}) - cannot determine publication years")
+            continue  # Skip to the next author
         
         # Process each year
         for yr in range(min_yr, max_yr + 1):

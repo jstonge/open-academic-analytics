@@ -78,7 +78,7 @@ def main():
     # Handle incorrect coauthor min years
     # OpenAlex often thinks first works of a given author is much earlier than it really is
     print("Correcting coauthor publication years")
-    df['coauth_min_year'] = np.where(df.coauth_min_year < 1950, None, df.coauth_min_year)
+    df['coauth_min_year'] = df['coauth_min_year'].where(df['coauth_min_year'] >= 1950)
     df['coauth_age'] = df.pub_year - df.coauth_min_year
     df['age_diff'] = df.coauth_age - df.author_age
     print(f"Corrected {df.coauth_min_year.isna().sum()} missing coauthor min years")

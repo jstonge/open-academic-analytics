@@ -3,3 +3,7 @@
 myenv/
 node_modules/
 yarn-error.log
+scripts/modules/__pycache__
+scripts/models/stan/
+data/raw/base_pay/
+data/raw/

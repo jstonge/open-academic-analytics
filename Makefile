@@ -34,7 +34,7 @@ clean:
 .PHONY: update-timeline
 
 # We don't import papers in this command
-update-timeline: import preprocess-paper updateDB-coauthor preprocess-coauthor 
+update-timeline: researchers import preprocess-paper updateDB-coauthor preprocess-coauthor 
 
 # data-dirs:
 # 	mkdir -p $(DATA_DIR_CLEAN)

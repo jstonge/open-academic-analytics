@@ -138,12 +138,14 @@ Speaking of which, maybe we could reach to Debra Titone eventually, she was open
 <img src="./assets/titone_lab.webp"></img>
 </div>
 
+
+
 <!-- APPENDIX -->
 
 ```js
 const db = DuckDBClient.of({
-  data: FileAttachment("./data/Finding Principal Investigators (PIs) - uvm_profs_2023.parquet"),
-  dept2col: FileAttachment("./data/Finding Principal Investigators (PIs) - uvm_dept2col.parquet")
+  data: FileAttachment("data/Finding Principal Investigators (PIs) - uvm_profs_2023.parquet"),
+  dept2col: FileAttachment("data/Finding Principal Investigators (PIs) - uvm_dept2col.parquet")
   });
 ```
 
