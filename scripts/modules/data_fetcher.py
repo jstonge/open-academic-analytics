@@ -159,7 +159,6 @@ class OpenAlexFetcher:
         self._rate_limit()
         
         try:
-            # Search for the author by name using the correct API approach
             # The search parameter is used for searching by name
             # And results are sorted by cited_by_count to get the most relevant author
             authors = Authors().search_filter(display_name=author_name).sort(cited_by_count="desc").get()

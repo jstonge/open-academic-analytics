@@ -1,6 +1,19 @@
 """
-Input OA api and a list of people as targets, output tables:
-  - `paper`: tidy at paper level with PRIMARY KEY (`ego_aid`, `wid`).
+Paper Timeline Processor
+
+Fetches and processes academic papers for target researchers using OpenAlex API,
+creating comprehensive paper and author records with temporal metadata.
+
+INPUT: researchers.tsv (researcher annotations with OpenAlex IDs)
+OUTPUT: paper and author records in oa_data_raw.db with timeline data
+
+Key Features:
+- Fetches papers by year from OpenAlex API for each researcher
+- Processes paper metadata (DOI, citations, coauthors, institutions)
+- Tracks author career progression and institutional affiliations
+- Handles coauthor discovery and OpenAlex ID resolution
+- Updates author age calculations based on publication history
+- Filters non-English works and validates publication dates
 """
 import sys
 import os
@@ -53,11 +66,8 @@ def main():
     print(f"Found {len(target_aids)} researchers with OpenAlex IDs")
     
     # Extract known first publication years if available
-    known_first_pub_years = {}
-    if 'first_pub_year' in target_aids.columns:
-        known_years_df = target_aids[['oa_uid', 'first_pub_year']].dropna()
-        known_first_pub_years = {k.upper(): int(v) for k, v in known_years_df.values}
-        print(f"Found {len(known_first_pub_years)} known first publication years")
+    known_years_df = target_aids[['oa_uid', 'first_pub_year']].dropna()
+    known_first_pub_years = {k.upper(): int(v) for k, v in known_years_df.values}
     
     # Process target_aids
     target_aids['oa_uid'] = target_aids['oa_uid'].str.upper()
@@ -80,6 +90,7 @@ def main():
     # Process each researcher
     for i, row in tqdm(target_aids.iterrows(), total=len(target_aids)):
            
+        # target_aid = 'A5040821463'
         target_aid = row['oa_uid']
         
         # Fetch display name from OpenAlex, as it's not in the raw data
@@ -171,8 +182,8 @@ def main():
                 wid = w['id'].split("/")[-1]
                 
                 # Skip if already in database
-                if (target_aid, wid) in existing_papers:
-                    continue
+                # if (target_aid, wid) in existing_papers:
+                #     continue
                 
                 # Add some noise within year for visualization purpose
                 shuffled_date = shuffle_date_within_month(w['publication_date'])
@@ -241,31 +252,55 @@ def main():
             
             # Check if we can find OpenAlex IDs for coauthors
             coauthors_with_ids = []
+
             for info in coauthor_info:
-                
                 try:
-                    # Use fetcher to get author by name
-                    result = fetcher.get_author_info_by_name(info['name'])
-                    if result and 'id' in result:
-                        coauthor_id = result['id'].split('/')[-1]
-                        # Create a minimal coauthor tuple
-                        # (ego_aid, pub_date, pub_year, coauthor_aid, coauthor_name, ...)
+                    # Skip if essential data is missing
+                    if not info.get('name') or not info.get('year'):
+                        print(f"Skipping coauthor due to missing name or year: {info}")
+                        continue
+                        
+                    # Check if author is already cached
+                    result = db_exporter.get_author_cache_by_name(info['name'])
+                    
+                    # Use fetcher to get author by name if not cached
+                    if result is None:
+                        result = fetcher.get_author_info_by_name(info['name'])
+                        
+                    # Process result if we found author data
+                    if result and ('id' in result or 'aid' in result):
+                        # Extract coauthor ID
+                        coauthor_id_raw = result.get('id') or result.get('aid')
+                        coauthor_id = coauthor_id_raw.split('/')[-1] if isinstance(coauthor_id_raw, str) else str(coauthor_id_raw)
+                        
+                        # Create coauthor tuple with consistent date formatting
+                        pub_date = f"{info['year']}-01-01"
+                        
                         coauthor_tuple = (
-                            target_aid,  # ego_aid
-                            f"{info['year']}-01-01",  # pub_date (dummy)
-                            info['year'],  # pub_year
-                            coauthor_id,  # coauthor_aid
-                            info['name'],  # coauthor_name
-                            "from_paper",  # acquaintance - dummy value
-                            1,  # yearly_collabo - dummy value
-                            1,  # all_times_collabo - dummy value
-                            None,  # shared_institutions
-                            info['institution']  # coauthor_institution
+                            target_aid,                    # ego_aid
+                            pub_date,                      # pub_date
+                            info['year'],                  # pub_year
+                            coauthor_id,                   # coauthor_aid
+                            info['name'],                  # coauthor_name
+                            "from_paper",                  # acquaintance
+                            1,                             # yearly_collabo
+                            1,                             # all_times_collabo
+                            None,                          # shared_institutions
+                            info.get('institution')        # coauthor_institution (safe get)
                         )
+                        
                         coauthors_with_ids.append(coauthor_tuple)
+                    else:
+                        print(f"No valid ID found for coauthor: {info['name']}")
+                        
+                except KeyError as e:
+                    print(f"Missing required field for coauthor {info.get('name', 'Unknown')}: {e}")
+                except AttributeError as e:
+                    print(f"Invalid data format for coauthor {info.get('name', 'Unknown')}: {e}")
                 except Exception as e:
-                    print(f"Error getting ID for coauthor {info['name']}: {e}")
-            
+                    print(f"Unexpected error processing coauthor {info.get('name', 'Unknown')}: {e}")
+
+            print(f"Successfully processed {len(coauthors_with_ids)} coauthors with IDs")
             print(f"Found IDs for {len(coauthors_with_ids)} coauthors")
 
             author_records = author_processor.collect_author_info(

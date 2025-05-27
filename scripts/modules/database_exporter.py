@@ -75,6 +75,23 @@ class DatabaseExporter:
             )
         """)
     
+    def get_author_cache_by_name(self, author_name):
+        """
+        Get existing database records for a given author name.
+        
+        Args:
+            author_name (str): OpenAlex display name
+            
+        Returns:
+            dict or None: First matching author record as dict, None if not found
+        """
+        df = self.con.execute(
+            "SELECT * FROM author WHERE display_name = ?",
+            (author_name,)
+        ).fetch_df()
+        
+        return df.iloc[0].to_dict() if not df.empty else None
+
     def get_author_cache(self, author_id):
         """
         Get existing database records for a given author ID.

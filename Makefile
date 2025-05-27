@@ -40,13 +40,17 @@ update-timeline: researchers import preprocess-paper updateDB-coauthor preproces
 # 	mkdir -p $(DATA_DIR_CLEAN)
 
 researchers: #uvm_profs_2023.parquet -> researchers.tsv
-	python $(SCRIPT_DIR)/import/researchers.py -o data/raw
+	python -c "import pandas as pd; \
+		d = pd.read_parquet('data/raw/uvm_profs_2023.parquet'); \
+		cols = ['oa_display_name', 'is_prof', 'group_size', 'perceived_as_male', \
+		        'host_dept', 'has_research_group', \
+		        'oa_uid', 'group_url', 'first_pub_year']; \
+		d[cols].to_csv('data/raw/researchers.tsv', sep='\t', index=False)"
 
 import:
 	python $(SCRIPT_DIR)/import/timeline-paper.py \
 		-i $(DATA_DIR_RAW)/researchers.tsv \
 		-o $(DATA_DIR_RAW)
-
 
 # updateDB-paper: #researchers.tsv -> UPDATE oa_data_raw.db (paper/author table)
 # 	python $(SCRIPT_DIR)/import/timeline-paper.py \

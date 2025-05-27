@@ -81,7 +81,7 @@ const nb_coauthors = [...uniqCoAuthors].length
   <div class="grid-colspan-3">
     <div class="grid grid-cols-2">
       <div class="card">
-        <h3>Coauthors</h3>
+        <h3>${selectedAuthor}'s Coauthors</h3>
         ${resize((width) => 
         Plot.plot({
                 style: "overflow: visible;",
@@ -95,7 +95,7 @@ const nb_coauthors = [...uniqCoAuthors].length
                 fx: { label: null, padding: 0.03, axis: null },
                 y: { 
                   grid: true, 
-                  reverse: true, inset: 50, 
+                  reverse: true, 
                   domain: [new Date(minYear), new Date(maxYear)] 
                 }, 
                 r: { range: [1, 10] },
@@ -138,7 +138,7 @@ const nb_coauthors = [...uniqCoAuthors].length
                 marginLeft: 35,
                 y: { 
                   grid: true, 
-                  reverse: true, inset: 50,
+                  reverse: true, 
                   domain: [new Date(minYear), new Date(maxYear)]  }, 
                 r: { range: [1, 10] },
                 fx: { label: null, padding: 0.03, axis: null },
@@ -165,7 +165,7 @@ const nb_coauthors = [...uniqCoAuthors].length
 </div>
 
 ```js
-const selectedAuthor = selectedFaculty.length > 0 ? selectedFaculty[0] : 'Molly Stanley'
+const selectedAuthor = selectedFaculty.length > 0 ? selectedFaculty[0] : 'Peter Sheridan Dodds'
 ```
 
 ```js
