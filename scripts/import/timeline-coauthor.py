@@ -209,10 +209,11 @@ def process_author_year(df_pap, target_aid, target_name, yr, target_info,
     Returns:
         tuple: (coauthors, dates_in_year, new_collabs_this_year, time_collabo)
     """
-    target_institution, auth_age = target_info
+    _, auth_age = target_info  # We'll determine target_institution via majority vote
     
     # Initialize yearly tracking variables
     dates_in_year = []
+    all_target_inst_this_year = []  # Collect all target institutions for majority vote
     new_collabs_this_year = set()
     collabs_of_collabs_time_t = set()
     coauthName2aid = {}
@@ -237,6 +238,14 @@ def process_author_year(df_pap, target_aid, target_name, yr, target_info,
             shuffled_date = f"{yr}-01-01"
             dates_in_year.append(shuffled_date)
 
+        # Collect target author's institutions for this paper (for majority vote)
+        # Note: In the preprocessed data, we might have limited institution info
+        # We'll use the institution from target_info as a fallback
+        if hasattr(w, 'ego_institution') and not pd.isna(w['ego_institution']):
+            all_target_inst_this_year.append(w['ego_institution'])
+        elif hasattr(w, 'target_institution') and not pd.isna(w['target_institution']):
+            all_target_inst_this_year.append(w['target_institution'])
+
         # Process each coauthor
         if 'authors' not in w or pd.isna(w['authors']):
             print(f"Warning: Missing authors for paper {w['title']}")
@@ -258,8 +267,9 @@ def process_author_year(df_pap, target_aid, target_name, yr, target_info,
                 # Extract institution and aid
                 inst_name, coauthor_aid = coauthor_info
                 
-                # Update institution tracking
-                author_yearly_data['institutions'][inst_name] = author_yearly_data['institutions'].get(inst_name, 0) + 1
+                # Update institution tracking for coauthor
+                if inst_name:  # Only track if institution is not None
+                    author_yearly_data['institutions'][inst_name] = author_yearly_data['institutions'].get(inst_name, 0) + 1
 
                 # Update collaboration trackers
                 time_collabo[coauthor_name] = author_yearly_data
@@ -272,6 +282,14 @@ def process_author_year(df_pap, target_aid, target_name, yr, target_info,
                 # Track new collaborators
                 if coauthor_name not in set_all_collabs:
                     new_collabs_this_year.add(coauthor_name)
+
+    # Determine target institution via majority vote (like original code)
+    target_institution = None
+    if len(all_target_inst_this_year) > 0:
+        target_institution = Counter(all_target_inst_this_year).most_common(1)[0][0]
+    else:
+        # Fallback to institution from target_info if no institutions found in papers
+        target_institution = target_info[0] if target_info[0] else None
 
     # Update indirect connections
     set_collabs_of_collabs_never_worked_with.update(
@@ -303,12 +321,14 @@ def process_author_year(df_pap, target_aid, target_name, yr, target_info,
             # Handle leap year edge case
             shuffled_auth_age = shuffled_auth_age.replace("29", "28") if shuffled_auth_age.endswith("29") else shuffled_auth_age
 
-            # Determine shared institution
+            # Determine shared institution (this is the corrected logic)
             shared_inst = None
             max_institution = None
 
             if coauthor_data['institutions'] and target_institution:
+                # Find the most common institution for this coauthor
                 max_institution = max(coauthor_data['institutions'], key=coauthor_data['institutions'].get)
+                # Only mark as shared if coauthor's most common institution matches target's institution
                 if max_institution == target_institution:
                     shared_inst = max_institution
 
