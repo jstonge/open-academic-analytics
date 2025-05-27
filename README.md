@@ -1,59 +1,33 @@
 # Open Academic Analytics
 
-This is an [Observable Framework](https://observablehq.com/framework/) app. To install the required dependencies, run:
+### Data schema
 
-```
-npm install
-```
+<img width="899" alt="Screenshot 2025-05-27 at 10 24 30 AM" src="https://github.com/user-attachments/assets/eed6117a-0c4f-4de8-9a8d-89bc422da929" />
 
-Then, to start the local preview server, run:
+#### Description
 
-```
-npm run dev
-```
+1. `paper` - Individual publication records
 
-Then visit <http://localhost:3000> to preview your app.
+- Primary key: (ego_aid, wid)
+- Contains paper metadata like title, DOI, citations, coauthors
+- Populated by timeline-paper.py
 
-For more, see <https://observablehq.com/framework/getting-started>.
+2. `author` - Author career progression data
 
-## Project structure
+- Primary key: (aid, pub_year)
+- Tracks authors by year with age, institution, career span
+- Populated by timeline-paper.py
 
-A typical Framework project looks like this:
+3. `coauthor2` - Collaboration relationships
 
-```ini
-.
-├─ src
-│  ├─ components
-│  │  └─ timeline.js           # an importable module
-│  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
-│  └─ index.md                 # the home page
-├─ .gitignore
-├─ observablehq.config.js      # the app config file
-├─ package.json
-└─ README.md
-```
+- Primary key: (ego_aid, coauthor_aid, pub_year)
+- Contains collaboration metadata like frequency, relationship type, shared institutions
+- Populated by timeline-coauthor.py
 
-**`src`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/project-structure#routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
+#### Data flow
 
-**`src/index.md`** - This is the home page for your app. You can have as many additional pages as you’d like, but you should always have a home page, too.
+1. `timeline-paper.py` fetches papers from OpenAlex API → populates `paper` and `author` tables
+1. `timeline-coauthor.py` reads paper data → analyzes collaborations → populates `coauthor2` table
+1. Preprocessing scripts read all tables → output clean parquet files for analysis
 
-**`src/data`** - You can put [data loaders](https://observablehq.com/framework/data-loaders) or static data files anywhere in your source root, but we recommend putting them here.
-
-**`src/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
-
-**`observablehq.config.js`** - This is the [app configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the app’s title.
-
-## Command reference
-
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm install`            | Install or reinstall dependencies                        |
-| `npm run dev`        | Start local preview server                               |
-| `npm run build`      | Build your static site, generating `./dist`              |
-| `npm run deploy`     | Deploy your app to Observable                            |
-| `npm run clean`      | Clear the local data loader cache                        |
-| `npm run observable` | Run commands like `observable help`                      |
+See [Makefile](./Makefile) for more.
