@@ -1,11 +1,15 @@
 ---
 theme: wide
 toc: false
-sql:
-  coauthor: coauthor.parquet
-  paper: paper.parquet
-  author: author.parquet
 ---
+
+```js
+const db = DuckDBClient.of({
+  coauthor: FileAttachment("coauthor.csv").csv({typed:true}),
+  author: FileAttachment("author.csv").csv(),
+  paper: FileAttachment("paper.csv").csv({typed:true})
+  });
+```
 
 # Explore faculties timeline
 
@@ -175,7 +179,9 @@ const maxYear = Math.max(d3.max([...coauthor].map(d=>d[timelineAxis])),d3.max([.
 
 <!-- ## Coauthor table -->
 
-```sql id=coauthor
+
+```js 
+let coauthor = db.query(`
 SELECT 
   age_std::DATE as "Standardized Age", 
   pub_date::DATE as "Publication Date", 
@@ -197,16 +203,17 @@ SELECT
   age_diff as "Age Difference",
   age_bucket as "Age Bucket"
 FROM coauthor 
-WHERE name = ${selectedAuthor}
+WHERE name = '${selectedAuthor}'
 ORDER BY pub_year
+`)
 ```
 
 <!-- ## Paper table -->
 
-```sql id=paper
+```js 
+let paper = db.query(`
 SELECT 
   a.age_std::DATE as "Standardized Age",
-  p.index as "Index",
   p.ego_aid as "Author ID",
   p.name as "Faculty Name",
   p.pub_date as "Publication Date",
@@ -228,16 +235,21 @@ SELECT
 FROM paper p
 LEFT JOIN author a
 ON p.ego_aid = a.aid AND p.pub_year = a.pub_year
-WHERE name = ${selectedAuthor}
+WHERE name = '${selectedAuthor}'
 ORDER BY a.pub_year
+`)
 ```
 
-```sql id=uniqAuthors
+```js
+let uniqAuthors = db.query(`
 SELECT DISTINCT name as "Faculty Name" FROM coauthor ORDER BY name
+`)
 ```
 
-```sql id=uniqCoAuthors
-SELECT DISTINCT coauth_name as "Coauthor Name" FROM coauthor WHERE name = ${selectedAuthor} 
+```js 
+let uniqCoAuthors = db.query(`
+SELECT DISTINCT coauth_name as "Coauthor Name" FROM coauthor WHERE name = '${selectedAuthor}' 
+`)
 ```
 
 ```js
