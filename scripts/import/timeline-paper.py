@@ -42,7 +42,7 @@ def parse_args():
         required=True,
     )
     parser.add_argument(
-        "-o", "--output", type=Path, help="output directory", required=True
+        "-o", "--output", type=Path, help="output database", required=True
     )
     parser.add_argument(
         "-U", "--update", action="store_true", help="update author age"
@@ -73,9 +73,9 @@ def main():
     target_aids['oa_uid'] = target_aids['oa_uid'].str.upper()
     
     # Initialize modules
-    print(f"Connecting to database at {args.output / 'oa_data_raw.db'}")
+    print(f"Connecting to database at {args.output}")
     # db_exporter = DatabaseExporter("/Users/jstonge1/Documents/work/uvm/open-academic-analytics/data/raw/oa_data_raw.db")
-    db_exporter = DatabaseExporter(str(args.output / "oa_data_raw.db"))
+    db_exporter = DatabaseExporter(args.output)
     
     print("Initializing OpenAlex fetcher")
     fetcher = OpenAlexFetcher()

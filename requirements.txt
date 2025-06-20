@@ -8,3 +8,4 @@ arviz
 seaborn
 matplotlib
 fastparquet
+umap-learn

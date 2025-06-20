@@ -31,3 +31,8 @@
 1. Preprocessing scripts read all tables → output clean parquet files for analysis
 
 See [Makefile](./Makefile) for more.
+
+
+#### Lab notes
+
+ - Extracting coauthorship metadata is tricky because we need to know information stored in different API endpoints. For instance, extracting `author_age` requires to know when was the time of first publication for each coauthor.
