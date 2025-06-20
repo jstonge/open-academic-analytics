@@ -142,8 +142,8 @@ Speaking of which, maybe we could reach to Debra Titone eventually, she was open
 
 ```js
 const db = DuckDBClient.of({
-  data: FileAttachment("uvm_profs_2023.parquet").csv({type:true}),
-  dept2col: FileAttachment("uvm_dept2col.parquet").csv({type:true})
+  data: FileAttachment("uvm_profs_2023.csv").csv({type:true}),
+  dept2col: FileAttachment("uvm_dept2col.csv").csv({type:true})
   });
 ```
 
