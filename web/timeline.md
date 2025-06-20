@@ -2,9 +2,9 @@
 theme: wide
 toc: false
 sql:
-  coauthor: data/coauthor.parquet
-  paper: data/paper.parquet
-  author: data/author.parquet
+  coauthor: coauthor.parquet
+  paper: paper.parquet
+  author: author.parquet
 ---
 
 # Explore faculties timeline
