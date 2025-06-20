@@ -13,8 +13,6 @@ We investigate faculties with research groups at UVM. We have a few questions th
     - Is there something about the kind of paper that lead to the growth of groups? (e.g. theoretical versus empirical)
   - How long is the average lifespan of a research group?
 
-We won't be able to answer all of those easily. But we'll see how far we get.
-
 <div class="tip">
     We simply define research groups _as any faculty claiming publicly on the internet to have such group, being overinclusive as a first step_. We also identify perceived sex based on pictures when googling the faculties. The faculty list we use to google is <a href=https://www.uvm.edu/sites/default/files/UVM-Office-of-Institutional-Research-and-Assessment/other-files/Final_FY24_Base_Pay.pdf/>this payroll from 2023</a>. You can find the data loader on the github.
 </div>
